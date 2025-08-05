@@ -1,0 +1,1281 @@
+{
+  "name": "Client Requirements Management Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "client-requirements",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-requirements",
+      "name": "Client Requirements Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "client-requirements-webhook"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "client_name",
+              "value": "={{ $json.client_name }}"
+            },
+            {
+              "name": "requirements",
+              "value": "={{ $json.requirements }}"
+            },
+            {
+              "name": "project_type",
+              "value": "={{ $json.project_type }}"
+            },
+            {
+              "name": "deadline",
+              "value": "={{ $json.deadline }}"
+            },
+            {
+              "name": "submission_time",
+              "value": "={{ new Date().toISOString() }}"
+            },
+            {
+              "name": "project_id",
+              "value": "={{ 'PRJ-' + new Date().getTime() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-form-data",
+      "name": "Process Form Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "service": "gmail",
+        "operation": "send",
+        "message": {
+          "to": "={{ $json.client_email }}",
+          "subject": "Requirements Received - {{ $json.project_type }}",
+          "body": "Dear {{ $json.client_name }},\n\nThank you for submitting your requirements for {{ $json.project_type }}.\n\nProject ID: {{ $json.project_id }}\nSubmission Time: {{ $json.submission_time }}\n\nWe have received your requirements and will start processing them immediately. Our team will reach out within 24 hours with vendor quotes and next steps.\n\nBest regards,\nProject Management Team"
+        }
+      },
+      "id": "gmail-client-confirmation",
+      "name": "Send Client Confirmation",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [640, 200]
+    },
+    {
+      "parameters": {
+        "channel": "#requirements",
+        "text": "🆕 New requirement submitted!\n\n👤 Client: {{ $json.client_name }}\n📋 Project: {{ $json.project_type }}\n🆔 Project ID: {{ $json.project_id }}\n📅 Deadline: {{ $json.deadline }}\n⏰ Submitted: {{ $json.submission_time }}\n\n📝 Requirements:\n{{ $json.requirements }}",
+        "username": "Requirements Bot"
+      },
+      "id": "slack-team-notification",
+      "name": "Notify Team on Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://graph.facebook.com/v17.0/YOUR_PHONE_NUMBER_ID/messages",
+        "authentication": "headerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_WHATSAPP_TOKEN"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "messaging_product",
+              "value": "whatsapp"
+            },
+            {
+              "name": "to",
+              "value": "VENDOR_PHONE_NUMBER"
+            },
+            {
+              "name": "type",
+              "value": "text"
+            },
+            {
+              "name": "text",
+              "value": "{\"body\": \"New requirement: {{ $json.project_type }} from {{ $json.client_name }}. Project ID: {{ $json.project_id }}\"}"
+            }
+          ]
+        }
+      },
+      "id": "whatsapp-vendor-notification",
+      "name": "WhatsApp Vendor Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [640, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.project_type }}",
+              "operation": "equal",
+              "value2": "web-development"
+            }
+          ]
+        }
+      },
+      "id": "switch-web-dev",
+      "name": "Web Development",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [840, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.project_type }}",
+              "operation": "equal",
+              "value2": "mobile-app"
+            }
+          ]
+        }
+      },
+      "id": "switch-mobile-app",
+      "name": "Mobile App",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [840, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.project_type }}",
+              "operation": "equal",
+              "value2": "design"
+            }
+          ]
+        }
+      },
+      "id": "switch-design",
+      "name": "Design Services",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [840, 400]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "vendor_email",
+              "value": "webdev-vendor@example.com"
+            },
+            {
+              "name": "vendor_name",
+              "value": "WebDev Solutions"
+            },
+            {
+              "name": "vendor_specialty",
+              "value": "Web Development"
+            }
+          ]
+        }
+      },
+      "id": "set-webdev-vendor",
+      "name": "Set WebDev Vendor",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [1040, 200]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "vendor_email",
+              "value": "mobile-vendor@example.com"
+            },
+            {
+              "name": "vendor_name",
+              "value": "Mobile Masters"
+            },
+            {
+              "name": "vendor_specialty",
+              "value": "Mobile App Development"
+            }
+          ]
+        }
+      },
+      "id": "set-mobile-vendor",
+      "name": "Set Mobile Vendor",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [1040, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "vendor_email",
+              "value": "design-vendor@example.com"
+            },
+            {
+              "name": "vendor_name",
+              "value": "Creative Designs"
+            },
+            {
+              "name": "vendor_specialty",
+              "value": "Design Services"
+            }
+          ]
+        }
+      },
+      "id": "set-design-vendor",
+      "name": "Set Design Vendor",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [1040, 400]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "service": "gmail",
+        "operation": "send",
+        "message": {
+          "to": "={{ $json.vendor_email }}",
+          "subject": "Quote Request - {{ $json.project_type }} Project",
+          "body": "Hello {{ $json.vendor_name }},\n\nWe have a new {{ $json.project_type }} project that requires your expertise.\n\nProject Details:\n- Client: {{ $json.client_name }}\n- Project ID: {{ $json.project_id }}\n- Deadline: {{ $json.deadline }}\n- Requirements: {{ $json.requirements }}\n\nPlease provide your quote by responding to this email within 48 hours.\n\nQuote should include:\n- Total cost\n- Timeline\n- Deliverables\n- Payment terms\n\nThank you!"
+        }
+      },
+      "id": "gmail-vendor-quote-request",
+      "name": "Send Quote Request to Vendor",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [1240, 300]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "vendor-quotes",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-vendor-quotes",
+      "name": "Vendor Quote Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 600],
+      "webhookId": "vendor-quotes-webhook"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": "YOUR_GOOGLE_SHEETS_ID",
+        "sheetName": "Quotes",
+        "columnToMatchOn": "Project ID",
+        "valueToMatchOn": "={{ $json.project_id }}",
+        "values": {
+          "Project ID": "={{ $json.project_id }}",
+          "Vendor Name": "={{ $json.vendor_name }}",
+          "Quote Amount": "={{ $json.quote_amount }}",
+          "Timeline": "={{ $json.timeline }}",
+          "Deliverables": "={{ $json.deliverables }}",
+          "Quote Date": "={{ new Date().toISOString() }}"
+        }
+      },
+      "id": "google-sheets-store-quote",
+      "name": "Store Quote in Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [440, 600]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Consolidate quotes for a project\nconst projectId = $input.first().json.project_id;\nconst quotes = $input.all().map(item => item.json);\n\n// Find best quote (lowest price)\nconst bestQuote = quotes.reduce((prev, current) => {\n  return (prev.quote_amount < current.quote_amount) ? prev : current;\n});\n\n// Format consolidated response\nconst consolidatedQuotes = {\n  project_id: projectId,\n  total_quotes: quotes.length,\n  best_quote: bestQuote,\n  all_quotes: quotes,\n  comparison_summary: quotes.map(q => ({\n    vendor: q.vendor_name,\n    amount: q.quote_amount,\n    timeline: q.timeline\n  }))\n};\n\nreturn consolidatedQuotes;"
+      },
+      "id": "function-consolidate-quotes",
+      "name": "Consolidate Quotes",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [640, 600]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "service": "gmail",
+        "operation": "send",
+        "message": {
+          "to": "={{ $json.client_email }}",
+          "subject": "Vendor Quotes Ready - {{ $json.project_type }}",
+          "body": "Dear {{ $json.client_name }},\n\nWe have received {{ $json.total_quotes }} quotes for your {{ $json.project_type }} project.\n\nRecommended Vendor:\n- Company: {{ $json.best_quote.vendor_name }}\n- Amount: ${{ $json.best_quote.quote_amount }}\n- Timeline: {{ $json.best_quote.timeline }}\n\nAll Quotes Summary:\n{{ $json.comparison_summary.map(q => `- ${q.vendor}: $${q.amount} (${q.timeline})`).join('\\n') }}\n\nTo proceed, please reply with your preferred vendor choice.\n\nBest regards,\nProject Management Team"
+        }
+      },
+      "id": "gmail-send-quotes-to-client",
+      "name": "Send Quotes to Client",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [840, 600]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "client-approval",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-client-approval",
+      "name": "Client Approval Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 900],
+      "webhookId": "client-approval-webhook"
+    },
+    {
+      "parameters": {
+        "mode": "payment",
+        "amount": "={{ $json.approved_quote_amount * 100 }}",
+        "currency": "usd",
+        "customerEmail": "={{ $json.client_email }}",
+        "description": "{{ $json.project_type }} - Project ID: {{ $json.project_id }}"
+      },
+      "id": "stripe-create-payment",
+      "name": "Create Stripe Payment",
+      "type": "n8n-nodes-base.stripe",
+      "typeVersion": 1,
+      "position": [440, 900]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "service": "gmail",
+        "operation": "send",
+        "message": {
+          "to": "={{ $json.client_email }}",
+          "subject": "Payment Link - {{ $json.project_type }}",
+          "body": "Dear {{ $json.client_name }},\n\nThank you for approving the quote for your {{ $json.project_type }} project.\n\nProject Details:\n- Project ID: {{ $json.project_id }}\n- Vendor: {{ $json.approved_vendor_name }}\n- Amount: ${{ $json.approved_quote_amount }}\n\nPayment Link: {{ $json.payment_url }}\n\nOnce payment is confirmed, we will immediately start your project.\n\nBest regards,\nProject Management Team"
+        }
+      },
+      "id": "gmail-send-payment-link",
+      "name": "Send Payment Link",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [640, 900]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "payment-confirmation",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-payment-confirmation",
+      "name": "Payment Confirmation Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 1200],
+      "webhookId": "payment-confirmation-webhook"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "project_status",
+              "value": "paid"
+            },
+            {
+              "name": "payment_date",
+              "value": "={{ new Date().toISOString() }}"
+            },
+            {
+              "name": "vendor_payment_amount",
+              "value": "={{ $json.amount * 0.85 }}"
+            },
+            {
+              "name": "platform_fee",
+              "value": "={{ $json.amount * 0.15 }}"
+            }
+          ]
+        }
+      },
+      "id": "set-payment-status",
+      "name": "Update Payment Status",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [440, 1200]
+    },
+    {
+      "parameters": {
+        "mode": "payment",
+        "amount": "={{ $json.vendor_payment_amount * 100 }}",
+        "currency": "usd",
+        "destination": "{{ $json.vendor_stripe_account }}",
+        "description": "Vendor payment for Project ID: {{ $json.project_id }}"
+      },
+      "id": "stripe-vendor-payment",
+      "name": "Pay Vendor",
+      "type": "n8n-nodes-base.stripe",
+      "typeVersion": 1,
+      "position": [640, 1200]
+    },
+    {
+      "parameters": {
+        "channel": "#finance",
+        "text": "💰 Payment Processed!\n\n🆔 Project ID: {{ $json.project_id }}\n👤 Client: {{ $json.client_name }}\n💵 Client Payment: ${{ $json.amount }}\n💸 Vendor Payment: ${{ $json.vendor_payment_amount }}\n🏦 Platform Fee: ${{ $json.platform_fee }}\n📅 Date: {{ $json.payment_date }}",
+        "username": "Finance Bot"
+      },
+      "id": "slack-finance-notification",
+      "name": "Notify Finance Team",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [840, 1200]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "resource": "page",
+        "operation": "create",
+        "databaseId": "YOUR_NOTION_DATABASE_ID",
+        "title": "{{ $json.project_type }} - {{ $json.client_name }}",
+        "properties": {
+          "Project ID": {
+            "type": "rich_text",
+            "rich_text": [
+              {
+                "text": {
+                  "content": "{{ $json.project_id }}"
+                }
+              }
+            ]
+          },
+          "Client": {
+            "type": "title",
+            "title": [
+              {
+                "text": {
+                  "content": "{{ $json.client_name }}"
+                }
+              }
+            ]
+          },
+          "Status": {
+            "type": "select",
+            "select": {
+              "name": "In Progress"
+            }
+          },
+          "Deadline": {
+            "type": "date",
+            "date": {
+              "start": "{{ $json.deadline }}"
+            }
+          }
+        }
+      },
+      "id": "notion-create-task",
+      "name": "Create Project Task",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2,
+      "position": [1040, 1200]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "service": "gmail",
+        "operation": "send",
+        "message": {
+          "to": "={{ $json.vendor_email }}",
+          "subject": "Project Assignment - {{ $json.project_type }}",
+          "body": "Hello {{ $json.vendor_name }},\n\nCongratulations! You have been assigned a new project.\n\nProject Details:\n- Project ID: {{ $json.project_id }}\n- Client: {{ $json.client_name }}\n- Type: {{ $json.project_type }}\n- Deadline: {{ $json.deadline }}\n- Your Quote: ${{ $json.vendor_payment_amount }}\n\nRequirements:\n{{ $json.requirements }}\n\nPayment has been processed and will be released upon project completion.\n\nPlease confirm receipt and start date.\n\nBest regards,\nProject Management Team"
+        }
+      },
+      "id": "gmail-vendor-assignment",
+      "name": "Notify Vendor of Assignment",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [1240, 1200]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * MON"
+            }
+          ]
+        }
+      },
+      "id": "schedule-weekly-check",
+      "name": "Weekly Progress Check",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [240, 1500]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "resource": "page",
+        "operation": "getAll",
+        "databaseId": "YOUR_NOTION_DATABASE_ID",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Status",
+              "condition": "equals",
+              "value": "In Progress"
+            }
+          ]
+        }
+      },
+      "id": "notion-get-active-projects",
+      "name": "Get Active Projects",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2,
+      "position": [440, 1500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Calculate project progress and identify overdue items\nconst projects = $input.all().map(item => item.json);\nconst currentDate = new Date();\n\nconst progressReport = projects.map(project => {\n  const deadline = new Date(project.properties.Deadline.date.start);\n  const daysDiff = Math.ceil((deadline - currentDate) / (1000 * 60 * 60 * 24));\n  \n  return {\n    project_id: project.properties['Project ID'].rich_text[0].text.content,\n    client_name: project.properties.Client.title[0].text.content,\n    status: project.properties.Status.select.name,\n    deadline: project.properties.Deadline.date.start,\n    days_remaining: daysDiff,\n    is_overdue: daysDiff < 0,\n    is_urgent: daysDiff <= 3 && daysDiff >= 0\n  };\n});\n\nconst overdueProjects = progressReport.filter(p => p.is_overdue);\nconst urgentProjects = progressReport.filter(p => p.is_urgent);\n\nreturn {\n  total_projects: progressReport.length,\n  overdue_projects: overdueProjects,\n  urgent_projects: urgentProjects,\n  all_projects: progressReport\n};"
+      },
+      "id": "function-calculate-progress",
+      "name": "Calculate Progress",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [640, 1500]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.overdue_projects.length }}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "id": "if-overdue-projects",
+      "name": "Check Overdue Projects",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [840, 1500]
+    },
+    {
+      "parameters": {
+        "channel": "#alerts",
+        "text": "🚨 OVERDUE PROJECTS ALERT!\n\n{{ $json.overdue_projects.length }} projects are overdue:\n\n{{ $json.overdue_projects.map(p => `• ${p.project_id} - ${p.client_name} (${Math.abs(p.days_remaining)} days overdue)`).join('\\n') }}\n\nImmediate action required!",
+        "username": "Alert Bot"
+      },
+      "id": "slack-overdue-alert",
+      "name": "Alert Overdue Projects",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [1040, 1400]
+    },
+    {
+      "parameters": {
+        "channel": "#progress",
+        "text": "📊 Weekly Progress Report\n\n📈 Total Active Projects: {{ $json.total_projects }}\n⚠️ Urgent (≤3 days): {{ $json.urgent_projects.length }}\n🚨 Overdue: {{ $json.overdue_projects.length }}\n\n{{ $json.urgent_projects.length > 0 ? '⚠️ Urgent Projects:\\n' + $json.urgent_projects.map(p => `• ${p.project_id} - ${p.client_name} (${p.days_remaining} days left)`).join('\\n') : 'No urgent projects this week! 🎉' }}",
+        "username": "Progress Bot"
+      },
+      "id": "slack-progress-report",
+      "name": "Send Progress Report",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [1040, 1600]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "task-completion",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-task-completion",
+      "name": "Task Completion Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 1800],
+      "webhookId": "task-completion-webhook"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "completion_date",
+              "value": "={{ new Date().toISOString() }}"
+            },
+            {
+              "name": "project_status",
+              "value": "completed"
+            }
+          ]
+        }
+      },
+      "id": "set-completion-status",
+      "name": "Set Completion Status",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [440, 1800]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "resource": "page",
+        "operation": "update",
+        "pageId": "={{ $json.notion_page_id }}",
+        "properties": {
+          "Status": {
+            "type": "select",
+            "select": {
+              "name": "Completed"
+            }
+          },
+          "Completion Date": {
+            "type": "date",
+            "date": {
+              "start": "{{ $json.completion_date }}"
+            }
+          }
+        }
+      },
+      "id": "notion-update-completion",
+      "name": "Update Project Status",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2,
+      "position": [640, 1800]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "service": "gmail",
+        "operation": "send",
+        "message": {
+          "to": "={{ $json.client_email }}",
+          "subject": "Project Completed - {{ $json.project_type }}",
+          "body": "Dear {{ $json.client_name }},\n\nGreat news! Your {{ $json.project_type }} project has been completed.\n\nProject Details:\n- Project ID: {{ $json.project_id }}\n- Completion Date: {{ $json.completion_date }}\n- Vendor: {{ $json.vendor_name }}\n\nDeliverables have been uploaded to your project folder. You will receive a separate email with access links.\n\nWe hope you're satisfied with the results. Please don't hesitate to reach out for any future projects!\n\nBest regards,\nProject Management Team"
+        }
+      },
+      "id": "gmail-completion-notification",
+      "name": "Notify Client of Completion",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [840, 1800]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 10 1 */2 *"
+            }
+          ]
+        }
+      },
+      "id": "schedule-bimonthly-engagement",
+      "name": "Bi-monthly Client Engagement",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [240, 2100]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": "YOUR_CLIENT_DATABASE_SHEETS_ID",
+        "sheetName": "Clients",
+        "range": "A:F"
+      },
+      "id": "google-sheets-get-clients",
+      "name": "Get Client List",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [440, 2100]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filter clients for engagement based on last project date\nconst clients = $input.all().map(item => item.json);\nconst twoMonthsAgo = new Date();\ntwoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);\n\nconst engagementClients = clients.filter(client => {\n  const lastProjectDate = new Date(client.last_project_date);\n  return lastProjectDate < twoMonthsAgo;\n});\n\nconst clientSummaries = engagementClients.map(client => {\n  return {\n    client_name: client.client_name,\n    client_email: client.client_email,\n    last_project_date: client.last_project_date,\n    total_projects: client.total_projects || 0,\n    total_spent: client.total_spent || 0,\n    preferred_services: client.preferred_services || 'Various',\n    achievements: `Completed ${client.total_projects} projects, Total investment: ${client.total_spent}`
+  };
+});
+
+return { engagement_clients: clientSummaries };"
+      },
+      "id": "function-filter-engagement-clients",
+      "name": "Filter Engagement Clients",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [640, 2100]
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "service": "gmail",
+        "operation": "send",
+        "message": {
+          "to": "={{ $json.client_email }}",
+          "subject": "We miss working with you! Special offers inside",
+          "body": "Dear {{ $json.client_name }},\n\nIt's been a while since we last worked together, and we wanted to reach out!\n\n🎉 Your Achievements with Us:\n{{ $json.achievements }}\n\n💡 Special Offer:\nAs a valued returning client, we're offering 15% off your next project!\n\n🚀 New Services:\n- AI Integration Solutions\n- Advanced Analytics\n- Cloud Migration Services\n- Mobile App Modernization\n\nWe'd love to help you with your next big project. Reply to this email or schedule a call to discuss how we can help you achieve your goals.\n\nBest regards,\nBusiness Development Team\n\nOffer valid until end of month!"
+        }
+      },
+      "id": "gmail-engagement-email",
+      "name": "Send Engagement Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [840, 2100]
+    },
+    {
+      "parameters": {
+        "channel": "#sales",
+        "text": "📧 Client Engagement Campaign Sent!\n\n📊 Engagement emails sent to {{ $json.engagement_clients.length }} clients\n\n👥 Target clients:\n{{ $json.engagement_clients.map(c => `• ${c.client_name} - Last project: ${c.last_project_date}`).join('\\n') }}\n\nFollow up in 1 week for responses!",
+        "username": "Engagement Bot"
+      },
+      "id": "slack-engagement-notification",
+      "name": "Notify Sales Team",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [1040, 2100]
+    },
+    {
+      "parameters": {
+        "errorMessage": "Workflow execution failed",
+        "options": {}
+      },
+      "id": "error-trigger",
+      "name": "Error Handler",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [240, 2400]
+    },
+    {
+      "parameters": {
+        "channel": "#alerts",
+        "text": "🚨 WORKFLOW ERROR!\n\n❌ Node: {{ $json.node.name }}\n🆔 Execution ID: {{ $json.execution.id }}\n⏰ Time: {{ new Date().toISOString() }}\n📝 Error: {{ $json.error.message }}\n\n@channel Please investigate immediately!",
+        "username": "Error Bot"
+      },
+      "id": "slack-error-notification",
+      "name": "Notify Error",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [440, 2400]
+    },
+    {
+      "parameters": {
+        "url": "https://api.uptimerobot.com/v2/newMonitor",
+        "authentication": "headerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/x-www-form-urlencoded"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "api_key",
+              "value": "YOUR_UPTIMEROBOT_API_KEY"
+            },
+            {
+              "name": "format",
+              "value": "json"
+            },
+            {
+              "name": "type",
+              "value": "1"
+            },
+            {
+              "name": "url",
+              "value": "{{ $json.webhook_url }}"
+            },
+            {
+              "name": "friendly_name",
+              "value": "N8N Workflow Monitor"
+            }
+          ]
+        }
+      },
+      "id": "http-uptime-monitor",
+      "name": "Setup Uptime Monitoring",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [640, 2400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"success\",\n  \"message\": \"Requirement received successfully\",\n  \"project_id\": \"{{ $json.project_id }}\",\n  \"timestamp\": \"{{ $json.submission_time }}\"\n}"
+      },
+      "id": "webhook-response-requirements",
+      "name": "Requirements Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [840, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"success\",\n  \"message\": \"Quote received successfully\",\n  \"project_id\": \"{{ $json.project_id }}\",\n  \"vendor\": \"{{ $json.vendor_name }}\"\n}"
+      },
+      "id": "webhook-response-quotes",
+      "name": "Quote Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [840, 600]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"success\",\n  \"message\": \"Approval received successfully\",\n  \"project_id\": \"{{ $json.project_id }}\",\n  \"payment_url\": \"{{ $json.payment_url }}\"\n}"
+      },
+      "id": "webhook-response-approval",
+      "name": "Approval Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [840, 900]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"success\",\n  \"message\": \"Payment confirmed successfully\",\n  \"project_id\": \"{{ $json.project_id }}\",\n  \"amount\": \"{{ $json.amount }}\"\n}"
+      },
+      "id": "webhook-response-payment",
+      "name": "Payment Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1040, 1200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"status\": \"success\",\n  \"message\": \"Task completion recorded successfully\",\n  \"project_id\": \"{{ $json.project_id }}\",\n  \"completion_date\": \"{{ $json.completion_date }}\"\n}"
+      },
+      "id": "webhook-response-completion",
+      "name": "Completion Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1040, 1800]
+    }
+  ],
+  "connections": {
+    "Client Requirements Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Form Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Form Data": {
+      "main": [
+        [
+          {
+            "node": "Send Client Confirmation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify Team on Slack",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "WhatsApp Vendor Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Requirements Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Team on Slack": {
+      "main": [
+        [
+          {
+            "node": "Web Development",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Mobile App",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Design Services",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Web Development": {
+      "main": [
+        [
+          {
+            "node": "Set WebDev Vendor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mobile App": {
+      "main": [
+        [
+          {
+            "node": "Set Mobile Vendor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Design Services": {
+      "main": [
+        [
+          {
+            "node": "Set Design Vendor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set WebDev Vendor": {
+      "main": [
+        [
+          {
+            "node": "Send Quote Request to Vendor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Mobile Vendor": {
+      "main": [
+        [
+          {
+            "node": "Send Quote Request to Vendor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Design Vendor": {
+      "main": [
+        [
+          {
+            "node": "Send Quote Request to Vendor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vendor Quote Webhook": {
+      "main": [
+        [
+          {
+            "node": "Store Quote in Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Quote in Sheets": {
+      "main": [
+        [
+          {
+            "node": "Consolidate Quotes",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Quote Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consolidate Quotes": {
+      "main": [
+        [
+          {
+            "node": "Send Quotes to Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client Approval Webhook": {
+      "main": [
+        [
+          {
+            "node": "Create Stripe Payment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Stripe Payment": {
+      "main": [
+        [
+          {
+            "node": "Send Payment Link",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Approval Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Payment Confirmation Webhook": {
+      "main": [
+        [
+          {
+            "node": "Update Payment Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Payment Status": {
+      "main": [
+        [
+          {
+            "node": "Pay Vendor",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify Finance Team",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create Project Task",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Payment Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Project Task": {
+      "main": [
+        [
+          {
+            "node": "Notify Vendor of Assignment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weekly Progress Check": {
+      "main": [
+        [
+          {
+            "node": "Get Active Projects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Active Projects": {
+      "main": [
+        [
+          {
+            "node": "Calculate Progress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Progress": {
+      "main": [
+        [
+          {
+            "node": "Check Overdue Projects",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Progress Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Overdue Projects": {
+      "main": [
+        [
+          {
+            "node": "Alert Overdue Projects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Task Completion Webhook": {
+      "main": [
+        [
+          {
+            "node": "Set Completion Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Completion Status": {
+      "main": [
+        [
+          {
+            "node": "Update Project Status",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Completion Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Project Status": {
+      "main": [
+        [
+          {
+            "node": "Notify Client of Completion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bi-monthly Client Engagement": {
+      "main": [
+        [
+          {
+            "node": "Get Client List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Client List": {
+      "main": [
+        [
+          {
+            "node": "Filter Engagement Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Engagement Clients": {
+      "main": [
+        [
+          {
+            "node": "Send Engagement Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify Sales Team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Handler": {
+      "main": [
+        [
+          {
+            "node": "Notify Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Error": {
+      "main": [
+        [
+          {
+            "node": "Setup Uptime Monitoring",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "client-requirements-workflow",
+  "tags": []
+}
